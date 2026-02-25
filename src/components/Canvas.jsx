@@ -176,7 +176,7 @@ export default function Canvas({ sections, isSharedView = false, isReadOnly = fa
                 {showDivider && (
                   <div className="flex items-center gap-3 mb-4">
                     <div className="flex-1 h-px bg-gray-200" />
-                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Detailed Findings</span>
+                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Detailed Investigation</span>
                     <div className="flex-1 h-px bg-gray-200" />
                   </div>
                 )}

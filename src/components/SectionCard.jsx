@@ -10,6 +10,7 @@ import KeyFindingsContent from './KeyFindingsContent'
 import HypothesisCardContent from './HypothesisCardContent'
 import RootCauseDetailContent from './RootCauseDetailContent'
 import NextStepsDetailContent from './NextStepsDetailContent'
+import PlanContent from './PlanContent'
 
 const OpsmateLogo = () => (
   <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -89,6 +90,8 @@ export default function SectionCard({ section, isExpanded, onToggle, onMitigate,
         return <RootCauseDetailContent content={section.content} />
       case 'next-steps-detail':
         return <NextStepsDetailContent content={section.content} />
+      case 'plan':
+        return <PlanContent content={section.content} />
       default:
         return null
     }

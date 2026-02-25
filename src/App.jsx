@@ -181,15 +181,13 @@ function App() {
           },
         },
         {
-          id: 'root-cause',
-          type: 'root-cause',
-          title: 'Incident Timeline',
+          id: 'plan',
+          type: 'plan',
+          title: 'Plan',
           createdBy: 'Opsmate',
           priority: 'High',
           isExpanded: false,
-          content: {
-            timelineDescription: 'The Stories pipeline integrity check failure began at **14:15 UTC** when the async hold queue started accumulating unreleased posts. By **14:30 UTC**, Stories reach had degraded to 54% of baseline. The primary feed rollback at **13:45 UTC** did not propagate to the Stories config path.',
-          },
+          content: {},
         },
         {
           id: 'mitigation',
@@ -363,7 +361,22 @@ function App() {
         priority: 'High',
         isExpanded: true,
         content: {
-          whatHappened: 'Taylor Swift\'s "Life of a Showgirl" album announcement was posted simultaneously across Facebook, Instagram, and YouTube. Within minutes, unconnected distribution metrics dropped sharply and reach numbers diverged significantly from projected baselines. The Creator Forensics team had proactively filed T234502850 to monitor this release.',
+          whatHappened: 'Taylor Swift\'s "Life of a Showgirl" album announcement was posted simultaneously across Facebook, Instagram, and WhatsApp. Within minutes, unconnected distribution metrics dropped sharply and reach numbers diverged significantly from projected baselines. The Creator Forensics team had proactively filed T234502850 to monitor this release.',
+          whatHappenedChart: {
+            title: 'Creator Distribution Reach — All Platforms',
+            width: 560, height: 126, paddingLeft: 46, paddingTop: 10, plotHeight: 91, yMax: 100,
+            yLabels: [
+              { value: 0, text: '0%' }, { value: 25, text: '25%' }, { value: 50, text: '50%' }, { value: 75, text: '75%' }, { value: 100, text: '100%' },
+            ],
+            threshold: { value: 60, label: '60% SLO' },
+            xLabels: ['12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00'],
+            annotation: { xIndex: 3, label: 'Album posted' },
+            lines: [
+              { label: 'Facebook', data: [91, 92, 93, 92, 74, 65, 60, 58, 57, 56, 55, 55], color: '#3b82f6', strokeWidth: 2 },
+              { label: 'Instagram', data: [94, 93, 94, 93, 80, 71, 64, 61, 59, 58, 57, 57], color: '#a855f7', strokeWidth: 2 },
+              { label: 'WhatsApp', data: [88, 89, 90, 89, 88, 87, 88, 89, 88, 87, 88, 88], color: '#22c55e', strokeWidth: 2 },
+            ],
+          },
           keyFindings: {
               items: [
                 {
@@ -378,7 +391,7 @@ function App() {
                   linkedSectionId: 'key-findings',
                   linkedLabel: 'See details',
                 },
-                { text: 'YouTube upload SLI within normal range — no alerts fired for cross-platform distribution' },
+                { text: 'WhatsApp upload SLI within normal range — no alerts fired for cross-platform distribution' },
                 {
                   text: 'Integrity hold-rate SLI exceeded 3x baseline, see',
                   source: { id: 'C', color: 'yellow', label: 'integrity_false_positive_spike', preview: { title: 'Integrity Hold Rate', value: '3.1x', delta: '+210%', status: 'critical', sparkline: [10, 12, 11, 15, 28, 45, 62, 78] } },
@@ -402,12 +415,65 @@ function App() {
           },
           rootCause: {
             confidence: 'High',
-            description: 'A recent integrity filter update (D984521) tightened thresholds for simultaneous multi-platform posts [1]. Posts exceeding the new cross-posting velocity limit were flagged and held for review, causing distribution delays [2]. The filter was not exempting Superstar Creator tier accounts, which historically have different posting patterns [3].',
+            description: 'A recent integrity filter update (D984521) tightened thresholds for simultaneous multi-platform posts [1]. The cross-posting velocity limit was reduced from 5 to 2 posts per minute, which immediately impacted high-volume creators who publish across platforms simultaneously. Posts exceeding the new limit were flagged and held for review, causing distribution delays of up to 4 hours [2]. The filter was not exempting Superstar Creator tier accounts, which historically have different posting patterns and were previously allowlisted under the prior threshold configuration [3].',
             sources: [
               { id: 1, color: 'green', label: 'Integrity filter changelog' },
               { id: 2, color: 'blue', label: 'Distribution pipeline logs' },
               { id: 3, color: 'red', label: 'Creator tier config' },
             ],
+            timeline: {
+              date: 'Feb 25, 2026',
+              timeLabels: ['12:30 PM', '1:00 PM', '1:30 PM', '2:00 PM', '2:30 PM', '3:00 PM'],
+              rows: [
+                {
+                  label: 'Mobile App Shipments',
+                  color: '#6366f1',
+                  events: [
+                    { position: 0.4 }, { position: 1.1, count: 2 }, { position: 1.7 }, { position: 2.1 },
+                    { position: 2.6 }, { position: 3.2 }, { position: 3.7 }, { position: 4.0, count: 2 },
+                    { position: 4.3, count: 2 }, { position: 4.8 }, { position: 5.2 }, { position: 5.5 },
+                  ],
+                },
+                {
+                  label: 'GKs',
+                  color: '#7c3aed',
+                  events: [
+                    { position: 0.0, value: 13 }, { position: 0.2, value: 17 }, { position: 0.4, value: 17 },
+                    { position: 0.6, value: 22 }, { position: 0.8, value: 8 }, { position: 0.9, value: 11 },
+                    { position: 1.1, value: 27 }, { position: 1.3, value: 17 }, { position: 1.5, value: 19 },
+                    { position: 1.7, value: 25 }, { position: 1.9, value: 10 }, { position: 2.1, value: 30 },
+                    { position: 2.3, value: 36 }, { position: 2.5, value: 23 }, { position: 2.7, value: 27 },
+                    { position: 2.9, value: 28 }, { position: 3.1, value: 25 }, { position: 3.3, value: 29 },
+                    { position: 3.5, value: 26 }, { position: 3.7, value: 29 }, { position: 3.9, value: 26 },
+                    { position: 4.1, value: 23 }, { position: 4.3, value: 31 }, { position: 4.5, value: 30 },
+                    { position: 4.6, value: 11 }, { position: 4.8, value: 19 }, { position: 5.0, value: 23 },
+                    { position: 5.1, value: 24 }, { position: 5.2, value: 31 }, { position: 5.4, value: 23 },
+                    { position: 5.5, value: 22 }, { position: 5.6, value: 25 }, { position: 5.7, value: 36 },
+                    { position: 5.8, value: 27 }, { position: 5.9, value: 23 }, { position: 6.0, value: 33 },
+                  ],
+                },
+                {
+                  label: 'MetaConfig',
+                  color: '#7c3aed',
+                  events: [
+                    { position: 0.0, value: 22 }, { position: 0.15, value: 18 }, { position: 0.3, value: 12 },
+                    { position: 0.45, value: 11 }, { position: 0.6, value: 28 }, { position: 0.75, value: 3 },
+                    { position: 0.9, value: 19 }, { position: 1.05, value: 29 }, { position: 1.2, value: 33 },
+                    { position: 1.35, value: 1 }, { position: 1.5, value: 26 }, { position: 1.65, value: 21 },
+                    { position: 1.8, value: 14 }, { position: 1.95, value: 21 }, { position: 2.1, value: 35 },
+                    { position: 2.25, value: 21 }, { position: 2.4, value: 18 }, { position: 2.55, value: 21 },
+                    { position: 2.7, value: 31 }, { position: 2.85, value: 1 }, { position: 3.0, value: 23 },
+                    { position: 3.15, value: 21 }, { position: 3.3, value: 12 }, { position: 3.45, value: 3 },
+                    { position: 3.6, value: 19 }, { position: 3.75, value: 21 }, { position: 3.9, value: 30 },
+                    { position: 4.05, value: 21 }, { position: 4.2, value: 17 }, { position: 4.35, value: 33 },
+                    { position: 4.5, value: 1 }, { position: 4.65, value: 26 }, { position: 4.8, value: 29 },
+                    { position: 4.95, value: 11 }, { position: 5.1, value: 35 }, { position: 5.25, value: 21 },
+                    { position: 5.4, value: 27 }, { position: 5.55, value: 1 }, { position: 5.7, value: 30 },
+                    { position: 5.85, value: 21 }, { position: 6.0, value: 19 },
+                  ],
+                },
+              ],
+            },
           },
           nextSteps: [
             { id: 1, text: 'Add Superstar Creator exemption to the cross-posting velocity filter', completed: false },
@@ -418,85 +484,13 @@ function App() {
         },
       },
       {
-        id: 'root-cause',
-        type: 'root-cause',
-        title: 'Incident Timeline',
+        id: 'plan',
+        type: 'plan',
+        title: 'Plan',
         createdBy: 'Opsmate',
         priority: 'High',
         isExpanded: false,
-        content: {
-          timelineDescription: 'The upstream dependency failure began at **09:42 UTC** when the authorization service started experiencing elevated latency. By **09:48 UTC**, error rates exceeded the 5% threshold, triggering the initial alert. The cascading failure reached SEVManager at **09:52 UTC**, causing widespread permission check failures.',
-        },
-      },
-      {
-        id: 'key-findings',
-        type: 'key-findings',
-        title: 'Key Findings',
-        createdBy: 'Opsmate',
-        priority: 'High',
-        isExpanded: false,
-        content: {
-          description: 'Correlated SLI metrics across platforms during the incident window show clear distribution suppression on Facebook and Instagram, while YouTube remained unaffected.',
-          findings: [
-            {
-              title: 'Creator Reach SLI',
-              description: 'Post reach on Facebook dropped 42% vs. projected baseline within the first 2 hours of the album announcement.',
-              status: 'critical',
-              statusLabel: '-42% from baseline',
-              linkedSectionId: 'hypothesis-1',
-              linkedLabel: 'Hypothesis 1',
-              chart: {
-                width: 500, height: 160, paddingLeft: 45, paddingTop: 15, plotHeight: 120, yMax: 100,
-                yLabels: [
-                  { value: 0, text: '0%' }, { value: 25, text: '25%' }, { value: 50, text: '50%' }, { value: 75, text: '75%' }, { value: 100, text: '100%' },
-                ],
-                threshold: { value: 60, label: '60% threshold' },
-                xLabels: ['12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00'],
-                lines: [
-                  { data: [92, 91, 93, 90, 88, 82, 74, 68, 62, 59, 58, 58], color: '#ef4444', fill: '#ef4444', strokeWidth: 2 },
-                ],
-              },
-            },
-            {
-              title: 'Instagram Distribution Score',
-              description: 'Distribution score fell from 0.94 to 0.61, indicating suppression by integrity filters on Instagram.',
-              status: 'critical',
-              statusLabel: '0.94 → 0.61',
-              linkedSectionId: 'hypothesis-2',
-              linkedLabel: 'Hypothesis 2',
-              chart: {
-                width: 500, height: 160, paddingLeft: 45, paddingTop: 15, plotHeight: 120, yMax: 1,
-                yLabels: [
-                  { value: 0, text: '0.0' }, { value: 0.25, text: '0.25' }, { value: 0.5, text: '0.50' }, { value: 0.75, text: '0.75' }, { value: 1, text: '1.0' },
-                ],
-                threshold: { value: 0.7, label: '0.70 SLO' },
-                xLabels: ['12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00'],
-                lines: [
-                  { data: [0.94, 0.93, 0.94, 0.93, 0.91, 0.85, 0.78, 0.71, 0.66, 0.63, 0.61, 0.61], color: '#3b82f6', fill: '#3b82f6', strokeWidth: 2 },
-                ],
-              },
-            },
-            {
-              title: 'Integrity Hold Rate',
-              description: 'False-positive integrity holds spiked to 3.1x baseline after the cross-posting velocity filter flagged the simultaneous multi-platform posts.',
-              status: 'critical',
-              statusLabel: '3.1x baseline',
-              linkedSectionId: 'root-cause-detail',
-              linkedLabel: 'Root Cause',
-              chart: {
-                width: 500, height: 160, paddingLeft: 45, paddingTop: 15, plotHeight: 120, yMax: 4,
-                yLabels: [
-                  { value: 0, text: '0x' }, { value: 1, text: '1x' }, { value: 2, text: '2x' }, { value: 3, text: '3x' }, { value: 4, text: '4x' },
-                ],
-                threshold: { value: 1, label: '1x baseline' },
-                xLabels: ['12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00'],
-                lines: [
-                  { data: [0.4, 0.5, 0.4, 0.6, 0.8, 1.2, 1.8, 2.4, 2.8, 3.0, 3.1, 3.1], color: '#f59e0b', fill: '#f59e0b', strokeWidth: 2 },
-                ],
-              },
-            },
-          ],
-        },
+        content: {},
       },
       {
         id: 'hypothesis-1',
@@ -574,7 +568,54 @@ function App() {
         priority: 'High',
         isExpanded: false,
         content: {
-          summary: 'A recent integrity filter update (D984521) tightened thresholds for simultaneous multi-platform posts. The cross-posting velocity limit was reduced from 5 to 2 posts per minute, and Superstar Creator tier accounts were not added to the exemption allowlist. When Taylor Swift\'s album announcement was published simultaneously across Facebook, Instagram, and YouTube, the velocity filter immediately flagged all posts, triggering integrity holds that suppressed distribution across both Facebook and Instagram.',
+          summary: 'A recent integrity filter update (D984521) tightened thresholds for simultaneous multi-platform posts. The cross-posting velocity limit was reduced from 5 to 2 posts per minute, and Superstar Creator tier accounts were not added to the exemption allowlist. When Taylor Swift\'s album announcement was published simultaneously across Facebook, Instagram, and WhatsApp, the velocity filter immediately flagged all posts, triggering integrity holds that suppressed distribution across both Facebook and Instagram.',
+          timeline: {
+            date: 'Feb 25, 2026',
+            startMinute: 15,
+            endMinute: 195,
+            lanes: [
+              {
+                label: 'Mobile App Shipments',
+                events: [
+                  { m: 25 }, { m: 52, n: 2, h: true }, { m: 70 }, { m: 82 },
+                  { m: 100 }, { m: 110 }, { m: 130 }, { m: 143, n: 2, h: true },
+                  { m: 150, n: 2, h: true }, { m: 170 }, { m: 182 }, { m: 190 },
+                ],
+              },
+              {
+                label: 'GKs',
+                events: [
+                  { m: 16, n: 13 }, { m: 20, n: 17 }, { m: 24, n: 17 }, { m: 28, n: 22 },
+                  { m: 33, n: 8 }, { m: 37, n: 11 }, { m: 42, n: 27 }, { m: 46, n: 17 },
+                  { m: 51, n: 19 }, { m: 55, n: 25 }, { m: 62, n: 10 }, { m: 67, n: 30 },
+                  { m: 72, n: 36 }, { m: 77, n: 23 }, { m: 82, n: 27 }, { m: 87, n: 28 },
+                  { m: 92, n: 25 }, { m: 97, n: 29 }, { m: 102, n: 26 }, { m: 108, n: 29 },
+                  { m: 113, n: 26 }, { m: 118, n: 23 }, { m: 123, n: 31 }, { m: 129, n: 30 },
+                  { m: 134, n: 11 }, { m: 139, n: 19 }, { m: 145, n: 23 }, { m: 150, n: 24 },
+                  { m: 155, n: 31 }, { m: 161, n: 23 }, { m: 166, n: 22 }, { m: 171, n: 25 },
+                  { m: 177, n: 36 }, { m: 182, n: 27 }, { m: 187, n: 23 }, { m: 192, n: 33 },
+                ],
+              },
+              {
+                label: 'MetaConfig',
+                events: [
+                  { m: 15, n: 22 }, { m: 19, n: 18 }, { m: 23, n: 12 }, { m: 27, n: 15 },
+                  { m: 30, n: 28 }, { m: 34, n: 31 }, { m: 37, n: 19 }, { m: 41, n: 24 },
+                  { m: 44, n: 33 }, { m: 48, n: 17 }, { m: 51, n: 26 }, { m: 55, n: 21 },
+                  { m: 58, n: 14 }, { m: 62, n: 29 }, { m: 65, n: 35 }, { m: 69, n: 22 },
+                  { m: 72, n: 18 }, { m: 76, n: 27 }, { m: 79, n: 31 }, { m: 83, n: 16 },
+                  { m: 86, n: 23 }, { m: 90, n: 28 }, { m: 93, n: 12 }, { m: 97, n: 34 },
+                  { m: 100, n: 19 }, { m: 104, n: 25 }, { m: 107, n: 30 }, { m: 111, n: 22 },
+                  { m: 114, n: 17 }, { m: 118, n: 28 }, { m: 121, n: 33 }, { m: 125, n: 14 },
+                  { m: 128, n: 26 }, { m: 132, n: 21 }, { m: 135, n: 29 }, { m: 139, n: 18 },
+                  { m: 142, n: 35 }, { m: 146, n: 23 }, { m: 149, n: 27 }, { m: 153, n: 11 },
+                  { m: 156, n: 30 }, { m: 160, n: 24 }, { m: 163, n: 19 }, { m: 167, n: 32 },
+                  { m: 170, n: 15 }, { m: 174, n: 28 }, { m: 177, n: 22 }, { m: 181, n: 18 },
+                  { m: 184, n: 12 },
+                ],
+              },
+            ],
+          },
           details: [
             {
               heading: 'Filter Configuration Change',
@@ -585,8 +626,8 @@ function App() {
               text: 'When posts were flagged, the integrity pipeline placed them in a review hold queue. During the hold period, the distribution pipeline treated these posts as pending review, suppressing organic reach and excluding them from recommendation surfaces. Facebook reach dropped 42% and Instagram distribution score fell from 0.94 to 0.61 within 2 hours.',
             },
             {
-              heading: 'YouTube Unaffected',
-              text: 'YouTube uses a separate content processing pipeline that does not share the cross-posting velocity filter. YouTube uploads were processed through standard creator upload flow, which has independent integrity checks that did not trigger on this content.',
+              heading: 'WhatsApp Unaffected',
+              text: 'WhatsApp uses a separate content processing pipeline that does not share the cross-posting velocity filter. WhatsApp uploads were processed through standard creator upload flow, which has independent integrity checks that did not trigger on this content.',
             },
           ],
           affectedSystems: [
@@ -595,24 +636,6 @@ function App() {
             'creator_reach_metrics',
             'content_hold_queue',
             'cross_posting_velocity_checker',
-          ],
-        },
-      },
-      {
-        id: 'next-steps-detail',
-        type: 'next-steps-detail',
-        title: 'Next Steps',
-        createdBy: 'Opsmate',
-        priority: 'High',
-        isExpanded: false,
-        content: {
-          summary: 'Immediate remediation focuses on restoring distribution for affected posts and preventing recurrence through allowlist updates and monitoring improvements.',
-          steps: [
-            { id: 1, title: 'Rollback integrity filter threshold', priority: 'P0', description: 'Revert D984521 cross-posting velocity limit from 2 back to 5 posts/min to unblock flagged content immediately.', owner: 'Integrity Team' },
-            { id: 2, title: 'Add Superstar Creator tier to allowlist', priority: 'P0', description: 'Update the integrity filter exemption allowlist to include all Superstar Creator tier accounts (>50M followers).', owner: 'Integrity Team' },
-            { id: 3, title: 'Release held posts from review queue', priority: 'P0', description: 'Manually release all posts currently held in the integrity review queue that were flagged by the velocity filter.', owner: 'Content Ops' },
-            { id: 4, title: 'Add velocity filter integration test', priority: 'P1', description: 'Create automated tests that validate high-profile creator posting patterns against velocity filter thresholds before deployment.', owner: 'Integrity Team' },
-            { id: 5, title: 'Set up creator reach monitoring alert', priority: 'P2', description: 'Configure an alert for when Superstar Creator tier reach drops below 80% of baseline within a 1-hour window.', owner: 'Observability' },
           ],
         },
       },

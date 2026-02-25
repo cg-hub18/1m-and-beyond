@@ -92,6 +92,87 @@ function SourceBadge({ source }) {
   )
 }
 
+function EventTimeline({ timeline }) {
+  if (!timeline) return null
+
+  const { date, timeLabels, rows } = timeline
+  const colCount = timeLabels.length
+
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-4 overflow-x-auto">
+      <div className="text-xs font-medium text-gray-500 mb-3">{date}</div>
+      <div className="min-w-[600px]">
+        {/* Time axis */}
+        <div className="flex items-center mb-3" style={{ paddingLeft: '140px' }}>
+          {timeLabels.map((label, i) => (
+            <div
+              key={i}
+              className="text-[10px] text-gray-400 text-center"
+              style={{ width: `${100 / colCount}%` }}
+            >
+              {label}
+            </div>
+          ))}
+        </div>
+
+        {/* Rows */}
+        <div className="space-y-2.5">
+          {rows.map((row, ri) => (
+            <div key={ri} className="flex items-center gap-3">
+              <div className="flex items-center gap-2 w-[128px] shrink-0">
+                <span
+                  className="w-2.5 h-2.5 rounded-sm shrink-0"
+                  style={{ backgroundColor: row.color }}
+                />
+                <span className="text-[11px] font-medium text-gray-600 truncate">
+                  {row.label}
+                </span>
+              </div>
+              <div className="flex-1 flex items-center relative h-6">
+                {row.events.map((evt, ei) => {
+                  const left = `${(evt.position / colCount) * 100}%`
+                  return (
+                    <div
+                      key={ei}
+                      className="absolute flex items-center justify-center"
+                      style={{ left }}
+                    >
+                      {evt.count > 1 ? (
+                        <span
+                          className="w-5 h-5 rounded-full border-2 flex items-center justify-center text-[9px] font-bold"
+                          style={{
+                            borderColor: row.color,
+                            color: row.color,
+                            backgroundColor: 'white',
+                          }}
+                        >
+                          {evt.count}
+                        </span>
+                      ) : evt.value != null ? (
+                        <span
+                          className="h-5 min-w-[18px] px-1 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
+                          style={{ backgroundColor: row.color }}
+                        >
+                          {evt.value}
+                        </span>
+                      ) : (
+                        <span
+                          className="w-2.5 h-2.5 rounded-sm"
+                          style={{ backgroundColor: row.color }}
+                        />
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function HypothesisContent({ content, onScrollToSection }) {
   const [checkedSteps, setCheckedSteps] = useState(
     () => new Set(content.nextSteps?.filter(s => s.completed).map(s => s.id) || [])
@@ -143,6 +224,97 @@ export default function HypothesisContent({ content, onScrollToSection }) {
           <p className="text-sm text-gray-700 leading-relaxed">{content.whatHappened}</p>
         </div>
       )}
+
+      {/* What Happened Chart */}
+      {content.whatHappenedChart && (() => {
+        const chart = content.whatHappenedChart
+        return (
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h5 className="text-xs font-semibold text-gray-500">{chart.title}</h5>
+              {chart.lines && (
+                <div className="flex items-center gap-3">
+                  {chart.lines.map((line, i) => (
+                    <div key={i} className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: line.color }} />
+                      <span className="text-[11px] text-gray-500">{line.label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
+              <svg viewBox={`0 0 ${chart.width} ${chart.height}`} className="w-full h-auto">
+                {chart.yLabels?.map((label) => {
+                  const y = chart.paddingTop + (1 - label.value / chart.yMax) * chart.plotHeight
+                  return (
+                    <g key={`y-${label.value}`}>
+                      <line x1={chart.paddingLeft} y1={y} x2={chart.width - 10} y2={y} stroke="#f3f4f6" strokeWidth="1" />
+                      <text x={chart.paddingLeft - 5} y={y + 4} textAnchor="end" className="text-[8px]" fill="#9ca3af">{label.text}</text>
+                    </g>
+                  )
+                })}
+
+                {chart.threshold && (
+                  <>
+                    <line
+                      x1={chart.paddingLeft}
+                      y1={chart.paddingTop + (1 - chart.threshold.value / chart.yMax) * chart.plotHeight}
+                      x2={chart.width - 10}
+                      y2={chart.paddingTop + (1 - chart.threshold.value / chart.yMax) * chart.plotHeight}
+                      stroke="#f97316" strokeWidth="1" strokeDasharray="4 4"
+                    />
+                    <text
+                      x={chart.width - 5}
+                      y={chart.paddingTop + (1 - chart.threshold.value / chart.yMax) * chart.plotHeight - 5}
+                      className="text-[8px]" fill="#f97316" textAnchor="end"
+                    >
+                      {chart.threshold.label}
+                    </text>
+                  </>
+                )}
+
+                {chart.annotation && (() => {
+                  const dataLen = chart.lines[0].data.length
+                  const x = chart.paddingLeft + (chart.annotation.xIndex / (dataLen - 1)) * (chart.width - chart.paddingLeft - 10)
+                  return (
+                    <g>
+                      <line x1={x} y1={chart.paddingTop} x2={x} y2={chart.paddingTop + chart.plotHeight} stroke="#9ca3af" strokeWidth="1" strokeDasharray="3 3" />
+                      <text x={x} y={chart.paddingTop - 4} textAnchor="middle" className="text-[8px]" fill="#6b7280">{chart.annotation.label}</text>
+                    </g>
+                  )
+                })()}
+
+                {chart.lines?.map((line, li) => {
+                  const points = line.data.map((val, i) => {
+                    const x = chart.paddingLeft + (i / (line.data.length - 1)) * (chart.width - chart.paddingLeft - 10)
+                    const y = chart.paddingTop + (1 - val / chart.yMax) * chart.plotHeight
+                    return `${x},${y}`
+                  }).join(' ')
+                  return (
+                    <polyline
+                      key={`line-${li}`}
+                      fill="none"
+                      stroke={line.color}
+                      strokeWidth={line.strokeWidth || 2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      points={points}
+                    />
+                  )
+                })}
+
+                {chart.xLabels?.map((label, i) => {
+                  const x = chart.paddingLeft + (i / (chart.xLabels.length - 1)) * (chart.width - chart.paddingLeft - 10)
+                  return (
+                    <text key={`x-${i}`} x={x} y={chart.paddingTop + chart.plotHeight + 14} textAnchor="middle" className="text-[8px]" fill="#9ca3af">{label}</text>
+                  )
+                })}
+              </svg>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Key Findings */}
       {content.keyFindings && (
@@ -243,8 +415,17 @@ export default function HypothesisContent({ content, onScrollToSection }) {
             
           </div>
           <p className="text-sm text-gray-700 leading-relaxed">
-            {content.rootCause.description.replace(/\[\d+\]/g, '')}
+            {content.rootCause.description.replace(/\s*\[\d+\]/g, '').split(/(D\d+)/).map((part, i) =>
+              /^D\d+$/.test(part) ? (
+                <a key={i} href={`https://www.internalfb.com/diff/${part}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline underline-offset-2 font-medium">{part}</a>
+              ) : part
+            )}
           </p>
+          {content.rootCause.timeline && (
+            <div className="mt-3">
+              <EventTimeline timeline={content.rootCause.timeline} />
+            </div>
+          )}
         </div>
       )}
 
