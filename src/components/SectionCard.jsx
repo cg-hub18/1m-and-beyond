@@ -1,12 +1,15 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronRight, MoreHorizontal, Copy, MessageSquare, Trash2, MessagesSquare } from 'lucide-react'
-import Badge from './Badge'
+import { ChevronDown, ChevronRight, MoreHorizontal, Copy, MessageSquare, Trash2, CheckCircle2, XCircle, ListChecks } from 'lucide-react'
 import HypothesisContent from './HypothesisContent'
 import RootCauseContent from './RootCauseContent'
 import MitigationContent from './MitigationContent'
 import AlertContent from './AlertContent'
 import ChartContent from './ChartContent'
 import SummaryContent from './SummaryContent'
+import KeyFindingsContent from './KeyFindingsContent'
+import HypothesisCardContent from './HypothesisCardContent'
+import RootCauseDetailContent from './RootCauseDetailContent'
+import NextStepsDetailContent from './NextStepsDetailContent'
 
 const OpsmateLogo = () => (
   <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -25,18 +28,13 @@ const OpsmateLogo = () => (
   </svg>
 )
 
-export default function SectionCard({ section, isExpanded, onToggle, onMitigate, isSharedView = false, isReadOnly = false, onAskOpsmate, onRemove, onCopy, onReferenceInSEVChat }) {
+export default function SectionCard({ section, isExpanded, onToggle, onMitigate, isSharedView = false, isReadOnly = false, onAskOpsmate, onRemove, onCopy, onScrollToSection, onOpenSteps }) {
   const [showMarkDropdown, setShowMarkDropdown] = useState(false)
   const [showMoreMenu, setShowMoreMenu] = useState(false)
   const [markedAs, setMarkedAs] = useState(null)
 
   const handleRemove = () => {
     onRemove?.(section)
-  }
-
-  const handleReferenceInSEVChat = () => {
-    onReferenceInSEVChat?.(section)
-    setShowMoreMenu(false)
   }
 
   const handleMarkAs = (status) => {
@@ -72,7 +70,7 @@ export default function SectionCard({ section, isExpanded, onToggle, onMitigate,
     
     switch (section.type) {
       case 'hypothesis':
-        return <HypothesisContent content={section.content} />
+        return <HypothesisContent content={section.content} onScrollToSection={onScrollToSection} />
       case 'root-cause':
         return <RootCauseContent content={section.content} />
       case 'mitigation':
@@ -83,12 +81,18 @@ export default function SectionCard({ section, isExpanded, onToggle, onMitigate,
         return <ChartContent content={section.content} />
       case 'summary':
         return <SummaryContent content={section.content} />
+      case 'key-findings':
+        return <KeyFindingsContent content={section.content} onScrollToSection={onScrollToSection} />
+      case 'hypothesis-card':
+        return <HypothesisCardContent content={section.content} />
+      case 'root-cause-detail':
+        return <RootCauseDetailContent content={section.content} />
+      case 'next-steps-detail':
+        return <NextStepsDetailContent content={section.content} />
       default:
         return null
     }
   }
-
-  const showPriority = ['hypothesis', 'root-cause', 'mitigation'].includes(section.type)
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-card">
@@ -106,7 +110,23 @@ export default function SectionCard({ section, isExpanded, onToggle, onMitigate,
             )}
           </button>
           <div>
-            <h3 className="text-[15px] font-semibold text-gray-900">{section.title}</h3>
+            <div className="flex items-center gap-2.5">
+              <h3 className="text-[15px] font-semibold text-gray-900">{section.title}</h3>
+              {section.type === 'hypothesis-card' && section.content?.status && (() => {
+                const cfg = {
+                  confirmed: { Icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50', label: 'Confirmed' },
+                  likely: { Icon: CheckCircle2, color: 'text-amber-600', bg: 'bg-amber-50', label: 'Likely' },
+                  ruled_out: { Icon: XCircle, color: 'text-gray-400', bg: 'bg-gray-100', label: 'Ruled Out' },
+                }[section.content.status]
+                if (!cfg) return null
+                return (
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${cfg.bg} ${cfg.color}`}>
+                    <cfg.Icon className="w-3.5 h-3.5" />
+                    {cfg.label}
+                  </span>
+                )
+              })()}
+            </div>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-xs text-gray-500">Created by</span>
               <div className="flex items-center gap-1.5">
@@ -121,12 +141,7 @@ export default function SectionCard({ section, isExpanded, onToggle, onMitigate,
                 )}
                 <span className="text-xs text-gray-700">{section.createdBy}</span>
               </div>
-              {showPriority && section.priority && (
-                <>
-                  <span className="text-gray-300">•</span>
-                  <Badge variant={section.priority.toLowerCase()}>{section.priority}</Badge>
-                </>
-              )}
+              
             </div>
           </div>
         </div>
@@ -195,6 +210,17 @@ export default function SectionCard({ section, isExpanded, onToggle, onMitigate,
               )}
             </div>
 
+            {/* See Steps Button */}
+            {onOpenSteps && (
+              <button 
+                onClick={() => onOpenSteps(section)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+              >
+                <ListChecks className="w-3.5 h-3.5" />
+                See steps
+              </button>
+            )}
+
             {/* Ask Opsmate Button */}
             {!isSharedView && (
               <button 
@@ -205,16 +231,6 @@ export default function SectionCard({ section, isExpanded, onToggle, onMitigate,
               </button>
             )}
 
-
-            {/* Remove Button - Only on shared view for non-base widgets */}
-            {isSharedView && !['hypothesis', 'root-cause', 'mitigation'].includes(section.type) && (
-              <button 
-                onClick={handleRemove}
-                className="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
-              >
-                Remove
-              </button>
-            )}
 
             {/* More Menu */}
             <div className="relative">
@@ -239,23 +255,13 @@ export default function SectionCard({ section, isExpanded, onToggle, onMitigate,
                       <Copy className="w-4 h-4 text-gray-400" />
                       <span className="text-sm text-gray-700">Copy</span>
                     </button>
-                    {isSharedView ? (
-                      <button
-                        onClick={handleReferenceInSEVChat}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50 transition-colors text-left"
-                      >
-                        <MessagesSquare className="w-4 h-4 text-green-500" />
-                        <span className="text-sm text-gray-700">Quote in SEVchat</span>
-                      </button>
-                    ) : (
-                      <button
-                        onClick={handleAskOpsmateFromMenu}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50 transition-colors text-left"
-                      >
-                        <MessageSquare className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm text-gray-700">Ask Opsmate</span>
-                      </button>
-                    )}
+                    <button
+                      onClick={handleAskOpsmateFromMenu}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50 transition-colors text-left"
+                    >
+                      <MessageSquare className="w-4 h-4 text-gray-400" />
+                      <span className="text-sm text-gray-700">Ask Opsmate</span>
+                    </button>
                     {!isSharedView && (
                       <button
                         onClick={handleRemoveFromMenu}

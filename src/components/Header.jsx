@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
-import { Share2, User, Users, PanelLeft, Flame, GitBranch, Loader2, Pencil, MessageCircle, MessagesSquare } from 'lucide-react'
+import { Share2, PanelLeft, Flame, Loader2, Pencil, MessageCircle } from 'lucide-react'
 
-export default function Header({ investigationId, title, activeCanvasTab, onCanvasTabChange, onShare, onToggleNav, onCreateBranch, isCreatingBranch, activeBranch, hasNotification, analysisTitle, onRenameBranch, isReadOnly = false, sharedIsBranch = false, onToggleSEVChat, isSEVChatOpen }) {
+export default function Header({ investigationId, title, activeCanvasTab, onCanvasTabChange, onShare, onToggleNav, onCreateBranch, isCreatingBranch, activeBranch, hasNotification, analysisTitle, onRenameBranch, isReadOnly = false, sharedIsBranch = false }) {
   const isOnBranch = !!activeBranch || sharedIsBranch
   const [isEditing, setIsEditing] = useState(false)
   const [editedName, setEditedName] = useState('')
@@ -36,21 +36,11 @@ export default function Header({ investigationId, title, activeCanvasTab, onCanv
   }
 
   return (
-    <header className="h-16 bg-white border-b border-gray-200 shrink-0 flex items-center justify-between pl-4 pr-4">
+    <header className={`${isOnBranch ? 'h-auto pt-3 pb-0' : 'h-16'} bg-white border-b border-gray-200 shrink-0 flex items-center justify-between pl-6 pr-4`}>
       {/* Left - Nav Icon + Title */}
       <div className="flex items-center gap-3">
-        <button 
-          onClick={onToggleNav}
-          className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <PanelLeft className="w-5 h-5 text-gray-600" />
-          {hasNotification && (
-            <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white" />
-          )}
-        </button>
         <div>
           <h1 className={`flex items-center gap-2 text-[15px] font-medium text-gray-900 leading-tight group ${isEditing ? 'mb-1' : ''}`}>
-            {isOnBranch && <MessageCircle className="w-4 h-4 text-gray-900" />}
             {isOnBranch ? (
               // If in read-only mode or no activeBranch, just show the title
               isReadOnly || !activeBranch ? (
@@ -100,65 +90,48 @@ export default function Header({ investigationId, title, activeCanvasTab, onCanv
               S590877
             </a>
           </div>
+          {isOnBranch && (
+            <div className="flex gap-6 mt-2 -mb-[1px]">
+              <button
+                onClick={() => onCanvasTabChange('shared')}
+                className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
+                  activeCanvasTab === 'shared'
+                    ? 'text-blue-600 border-blue-600'
+                    : 'text-gray-500 border-transparent hover:text-gray-700'
+                }`}
+              >
+                Shared
+              </button>
+              <button
+                onClick={() => onCanvasTabChange('personal')}
+                className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
+                  activeCanvasTab === 'personal'
+                    ? 'text-blue-600 border-blue-600'
+                    : 'text-gray-500 border-transparent hover:text-gray-700'
+                }`}
+              >
+                Personal
+              </button>
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Center - Canvas Tabs (commented out for now)
-      <div className="absolute left-1/2 -translate-x-1/2">
-        <div className="inline-flex items-center gap-1 p-1 bg-gray-100 rounded-full">
-          <button
-            onClick={() => onCanvasTabChange('personal')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              activeCanvasTab === 'personal'
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <User className="w-3.5 h-3.5" />
-            Personal Canvas
-          </button>
-          <button
-            onClick={() => onCanvasTabChange('shared')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              activeCanvasTab === 'shared'
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <Users className="w-3.5 h-3.5" />
-            Shared Canvas
-          </button>
-        </div>
-      </div>
-      */}
 
       {/* Right - Actions (hidden in read-only mode) */}
       {!isReadOnly && (
         <div className="flex items-center gap-2">
-          <button 
-            onClick={onCreateBranch}
-            disabled={isCreatingBranch}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 disabled:bg-blue-400 disabled:cursor-not-allowed rounded-md transition-colors"
-          >
-            {isCreatingBranch ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <MessageCircle className="w-4 h-4" />
-            )}
-            {isCreatingBranch ? 'Creating...' : 'New Opsmate Chat'}
-          </button>
-          {/* SEVchat button - only show on Shared Investigation (not on branches) */}
-          {!isOnBranch && onToggleSEVChat && (
+          {!isOnBranch && (
             <button 
-              onClick={onToggleSEVChat}
-              className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                isSEVChatOpen 
-                  ? 'text-green-700 bg-green-100 hover:bg-green-200' 
-                  : 'text-gray-600 bg-gray-100 hover:bg-gray-200'
-              }`}
+              onClick={onCreateBranch}
+              disabled={isCreatingBranch}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 disabled:bg-blue-400 disabled:cursor-not-allowed rounded-md transition-colors"
             >
-              <MessagesSquare className="w-4 h-4" />
-              {isSEVChatOpen ? 'Close SEVchat' : 'Open SEVchat'}
+              {isCreatingBranch ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <MessageCircle className="w-4 h-4" />
+              )}
+              {isCreatingBranch ? 'Creating...' : 'New Opsmate Chat'}
             </button>
           )}
           <button 

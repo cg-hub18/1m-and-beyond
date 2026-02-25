@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
-import { List, FileText, AlertTriangle, Lightbulb, Shield, PlusCircle, Send, BarChart3, Play } from 'lucide-react'
+import { PlusCircle, Send } from 'lucide-react'
 import SectionCard from './SectionCard'
+import OutlineSidebar from './OutlineSidebar'
 
-export default function Canvas({ sections, isSharedView = false, isReadOnly = false, onMitigate, onAskOpsmate, onAddChart, onRemove, onTriggerProactiveRun, onCopy, onReferenceInSEVChat }) {
+export default function Canvas({ sections, isSharedView = false, isReadOnly = false, onMitigate, onAskOpsmate, onAddChart, onRemove, onCopy, onOpenSteps }) {
   const [expandedSections, setExpandedSections] = useState({})
   const [animatedSections, setAnimatedSections] = useState(new Set())
   const [initialLoadComplete, setInitialLoadComplete] = useState(false)
-  const [showOutline, setShowOutline] = useState(false)
   const [chartInput, setChartInput] = useState('')
   const prevSectionsRef = useRef([])
   const scrollRef = useRef(null)
@@ -22,40 +22,6 @@ export default function Canvas({ sections, isSharedView = false, isReadOnly = fa
     if (e.key === 'Enter' && chartInput.trim()) {
       handleAddChart()
     }
-  }
-
-  const getSectionIcon = (type) => {
-    switch (type) {
-      case 'hypothesis':
-        return Lightbulb
-      case 'root-cause':
-        return AlertTriangle
-      case 'mitigation':
-        return Shield
-      case 'alert':
-        return AlertTriangle
-      case 'chart':
-        return BarChart3
-      default:
-        return FileText
-    }
-  }
-
-  const scrollToSection = (sectionId) => {
-    const sectionElement = sectionRefs.current[sectionId]
-    if (sectionElement && scrollRef.current) {
-      const containerRect = scrollRef.current.getBoundingClientRect()
-      const elementRect = sectionElement.getBoundingClientRect()
-      const scrollTop = scrollRef.current.scrollTop
-      const offset = 24
-      const targetPosition = scrollTop + elementRect.top - containerRect.top - offset
-      
-      scrollRef.current.scrollTo({ 
-        top: targetPosition, 
-        behavior: 'smooth' 
-      })
-    }
-    setShowOutline(false)
   }
 
   // Mark initial load complete after first render
@@ -112,12 +78,41 @@ export default function Canvas({ sections, isSharedView = false, isReadOnly = fa
       const updated = { ...prev }
       sections.forEach(section => {
         if (!(section.id in updated)) {
-          updated[section.id] = section.isExpanded ?? true
+          updated[section.id] = section.isExpanded ?? false
         }
       })
       return updated
     })
   }, [sections])
+
+  const [activeSectionId, setActiveSectionId] = useState(null)
+
+  // Track which section is currently visible in the viewport
+  useEffect(() => {
+    const container = scrollRef.current
+    if (!container) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter(e => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
+
+        if (visible.length > 0) {
+          const id = visible[0].target.getAttribute('data-section-id')
+          if (id) setActiveSectionId(id)
+        }
+      },
+      { root: container, rootMargin: '-10% 0px -60% 0px', threshold: 0 }
+    )
+
+    const currentRefs = sectionRefs.current
+    Object.values(currentRefs).forEach(el => {
+      if (el) observer.observe(el)
+    })
+
+    return () => observer.disconnect()
+  }, [sections, initialLoadComplete])
 
   const toggleSection = (sectionId) => {
     setExpandedSections(prev => ({
@@ -126,80 +121,65 @@ export default function Canvas({ sections, isSharedView = false, isReadOnly = fa
     }))
   }
 
+  const scrollToSection = (sectionId) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [sectionId]: true
+    }))
+
+    const doScroll = () => {
+      const el = sectionRefs.current[sectionId]
+      if (el && scrollRef.current) {
+        const containerRect = scrollRef.current.getBoundingClientRect()
+        const elementRect = el.getBoundingClientRect()
+        const scrollTop = scrollRef.current.scrollTop
+        const targetPosition = scrollTop + elementRect.top - containerRect.top - 24
+        scrollRef.current.scrollTo({ top: targetPosition, behavior: 'smooth' })
+      }
+    }
+
+    setTimeout(doScroll, 50)
+    setTimeout(doScroll, 300)
+  }
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden relative">
-      {/* Shared Canvas Banner */}
-      {isSharedView && !isReadOnly && (
-        <div className="bg-blue-50 border-b border-blue-100 px-6 py-3 shrink-0">
-          <p className="text-sm text-gray-700">
-            Shared Investigation is <span className="underline">visible to all</span>. All users can paste widgets and share directly to SEVchat.
-          </p>
-        </div>
-      )}
 
       <div className="flex-1 flex overflow-hidden relative">
-      {/* Outline Button - show on all canvases (except read-only) */}
-      {!isReadOnly && (
-      <div className="absolute top-6 left-6 z-10">
-        <button 
-          onClick={() => setShowOutline(!showOutline)}
-          className={`p-2 rounded-lg border border-gray-200 bg-white shadow-sm transition-colors ${
-            showOutline ? 'bg-gray-50 text-gray-600' : 'hover:bg-gray-50 text-gray-400 hover:text-gray-600'
-          }`}
-        >
-          <List className="w-5 h-5" />
-        </button>
-
-        {/* Outline Menu */}
-        {showOutline && (
-          <>
-            {/* Backdrop */}
-            <div 
-              className="fixed inset-0 z-10" 
-              onClick={() => setShowOutline(false)} 
-            />
-            
-            {/* Menu */}
-            <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-200 z-20 overflow-hidden animate-fade-in">
-              <div className="px-4 py-3 border-b border-gray-100">
-                <h3 className="text-sm font-semibold text-gray-900">Outline</h3>
-              </div>
-              <div className="py-2">
-                {sections.map((section) => {
-                  const Icon = getSectionIcon(section.type)
-                  return (
-                    <button
-                      key={section.id}
-                      onClick={() => scrollToSection(section.id)}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
-                    >
-                      <Icon className="w-4 h-4 text-gray-400 shrink-0" />
-                      <span className="text-sm text-gray-700 truncate">{section.title}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          </>
-        )}
+      {/* Outline Sidebar */}
+      <div className="hidden xl:block absolute left-6 top-6 z-10">
+        <OutlineSidebar
+          sections={sections}
+          activeSectionId={activeSectionId}
+          onScrollToSection={scrollToSection}
+        />
       </div>
-      )}
 
       {/* Canvas Content */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 pt-6 pb-24">
-        <div className="max-w-3xl mx-auto space-y-4">
+        <div className="max-w-[1088px] mx-auto space-y-4">
           {sections.map((section, index) => {
             const isNew = animatedSections.has(section.id)
             const isLastDynamicSection = section.type === 'alert' && index === sections.length - 1
             const shouldAnimate = !initialLoadComplete || isNew
+            const prevSection = index > 0 ? sections[index - 1] : null
+            const showDivider = prevSection && prevSection.type === 'hypothesis' && section.type !== 'hypothesis'
             
             return (
               <div 
                 key={section.id}
+                data-section-id={section.id}
                 ref={(el) => { sectionRefs.current[section.id] = el }}
                 className={isNew ? 'animate-slide-up' : (shouldAnimate ? 'animate-fade-in' : '')}
                 style={shouldAnimate && !isNew ? { opacity: 0, animationDelay: `${0.05 * (index + 1)}s` } : {}}
               >
+                {showDivider && (
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="flex-1 h-px bg-gray-200" />
+                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Detailed Findings</span>
+                    <div className="flex-1 h-px bg-gray-200" />
+                  </div>
+                )}
                 <SectionCard
                   section={section}
                   isExpanded={expandedSections[section.id] ?? section.isExpanded}
@@ -210,7 +190,8 @@ export default function Canvas({ sections, isSharedView = false, isReadOnly = fa
                   onAskOpsmate={onAskOpsmate}
                   onRemove={onRemove}
                   onCopy={onCopy}
-                  onReferenceInSEVChat={onReferenceInSEVChat}
+                  onScrollToSection={scrollToSection}
+                  onOpenSteps={onOpenSteps}
                 />
                 {/* Add extra space below new alert sections */}
                 {isLastDynamicSection && (
@@ -221,20 +202,6 @@ export default function Canvas({ sections, isSharedView = false, isReadOnly = fa
           })}
         </div>
       </div>
-
-      {/* Bottom Left - Trigger proactive run button (hide in read-only mode) */}
-      {!isReadOnly && onTriggerProactiveRun && (
-        <div className="absolute bottom-6 left-6 z-10">
-          <button 
-            type="button"
-            onClick={onTriggerProactiveRun}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
-          >
-            <Play className="w-4 h-4 text-gray-500" />
-            <span className="text-sm font-medium text-gray-700">Trigger proactive run</span>
-          </button>
-        </div>
-      )}
 
       {/* Bottom Chart Input Bar (hide in read-only mode) */}
       {!isReadOnly && (
