@@ -7,6 +7,9 @@ import StepsPanel from './components/StepsPanel'
 import ShareModal from './components/ShareModal'
 import Toast from './components/Toast'
 import LeftNav from './components/LeftNav'
+import VersionBar from './components/VersionBar'
+import T2ReasoningView from './components/T2ReasoningView'
+import T3HypothesisTree from './components/T3HypothesisTree'
 
 function App() {
   const [showSources, setShowSources] = useState(false)
@@ -29,6 +32,12 @@ function App() {
     { id: 'analysis-1', title: 'Shared Investigation', isNew: false, branches: [] }
   ])
   const [activeAnalysisId, setActiveAnalysisId] = useState('analysis-1')
+  const [activeVersion, setActiveVersion] = useState('T1')
+  const [t2Key, setT2Key] = useState(0)
+  const handleVersionChange = (v) => {
+    if (v === 'T2') setT2Key(k => k + 1)
+    setActiveVersion(v)
+  }
   const copilotRef = useRef(null)
 
   // Handle paste (Cmd+V) to paste copied widgets
@@ -758,8 +767,26 @@ function App() {
 
   const showCopilot = activeBranchId && !isReadOnlySharedMode && activeCanvasTab === 'personal'
 
+  if (activeVersion === 'T2') {
+    return (
+      <div className="h-screen flex flex-col bg-white pb-12">
+        <T2ReasoningView key={t2Key} investigation={investigation} />
+        <VersionBar activeVersion={activeVersion} onVersionChange={handleVersionChange} />
+      </div>
+    )
+  }
+
+  if (activeVersion === 'T3') {
+    return (
+      <div className="h-screen flex flex-col bg-[#f0f2f5] pb-12">
+        <T3HypothesisTree investigation={investigation} />
+        <VersionBar activeVersion={activeVersion} onVersionChange={handleVersionChange} />
+      </div>
+    )
+  }
+
   return (
-    <div className="h-screen flex bg-[#f0f2f5]">
+    <div className="h-screen flex bg-[#f0f2f5] pb-12">
       <LeftNav 
         isOpen={isNavOpen} 
         onClose={() => setIsNavOpen(false)} 
@@ -859,6 +886,8 @@ function App() {
       )}
 
       <StepsPanel isOpen={showSteps} onClose={() => setShowSteps(false)} stepsToShow={stepsToShow} />
+
+      <VersionBar activeVersion={activeVersion} onVersionChange={handleVersionChange} />
     </div>
   )
 }
